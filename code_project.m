@@ -2,6 +2,8 @@
 clc
 clear
 close all
+
+addpath(genpath("imagine-master"));
 %% read and view data
 load("project_data_v2.mat")
 figure;
