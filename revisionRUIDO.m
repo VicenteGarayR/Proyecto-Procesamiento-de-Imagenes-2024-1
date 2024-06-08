@@ -10,66 +10,45 @@ addpath(genpath("imagine-master"));
 load('project_data_v2.mat')         % carga de los datos
 
 %% FORMACION DE MATRICES PARA SEGMENTACION
-% SEGMENTACION CON THRESHOLD
+% SEGMENTACION CON THRESHOLD patient1_sys_blackblood
 IMAGE = patient1_sys_blackblood;    % imagen a analizar
 IMAGE = mat2gray(IMAGE);            % transformacion a escala [0 1]
-[m,n,p] = size(IMAGE);              % tamano de la imagen 
 thmax = max(IMAGE,[],'all');
 thmin = min(IMAGE,[],'all');
 th = (thmax - thmin)/2;             % thresholding en valor medio
-mask_front = zeros(m,n,p);          % mascara para el Thr coronal.
-mask_lateral = zeros(m,n,p);        % mascara para el Thr sagital
-mask_superior = zeros(m,n,p);       % mascara para el Thr superior
-mask3d = zeros(m,n,p);              % mascara general
+
+bl_msk_frontal  = MASK(IMAGE, [1 2 3], 0.1*th, 'black');
+bl_msk_lateral  = MASK(IMAGE, [1 3 2], 0.1*th, 'black');
+bl_msk_superior = MASK(IMAGE, [3 2 1], 0.1*th, 'black');
+bl_amask3d      = bl_msk_frontal.*bl_msk_lateral.*bl_msk_superior;
+
+% SEGMENTACION CON THRESHOLD patient1_sys_brightblood
+IMAGE = patient1_sys_brightblood;    % imagen a analizar
+IMAGE = mat2gray(IMAGE);            % transformacion a escala [0 1]
+thmax = max(IMAGE,[],'all');
+thmin = min(IMAGE,[],'all');
+th = (thmax - thmin)/2;             % thresholding en valor medio
+
+br_msk_frontal  = MASK(IMAGE, [1 2 3], 0.98*th, 'bright');
+br_msk_lateral  = MASK(IMAGE, [1 3 2], 0.98*th, 'bright');
+br_msk_superior = MASK(IMAGE, [3 2 1], 0.98*th, 'bright');
+br_amask3d      = br_msk_frontal.*br_msk_lateral.*br_msk_superior;
 
 
-% Segmentacion frontal
-% figure()
-for i = 1:p
-    seg_front  = zeros(m,n); 
-    seg_front(IMAGE(:,:,i) < 0.05*th) = 1;
-    seg_front = medfilt2(seg_front,[5 5]);
-    mask_front(:,:,i) = seg_front;     
+%% FUNCIONES
+function msk = MASK(I, perm , th, type)
+    I       = permute(I,perm);          % imagen permutada
+    [m,n,p] = size(I);                  % tamano de la imagen 
+    msk     = zeros(size(I));           % mascara general
+    for i = 1:p
+        seg = zeros(m,n);               % mascara para umbral
+        if type ==  "black"
+            seg(I(:,:,i) < th) = 1;     % aplicacion de umbral
+        else
+            seg(I(:,:,i) > th) = 1;     % aplicacion de umbral
+        end
+        seg = medfilt2(seg,[2 2]);            % filtro
+        msk(:,:,i) = seg;               % volumen de la mascara
+    end
+    msk = permute(msk, perm);
 end
-
-% Segmentacion lateral
-% figure()
-IMAGE = permute(IMAGE, [1, 3, 2]);
-mask_lateral = permute(mask_lateral, [1, 3, 2]);
-for i = 1:n
-    seg_lateral  = zeros(m,p); 
-    seg_lateral(IMAGE(:,:,i) < 0.05*th) = 1;
-    seg_lateral = medfilt2(seg_lateral,[10 10]);
-    mask_lateral(:,:,i) = seg_lateral;
-end
-IMAGE = permute(IMAGE, [1, 3, 2]);
-mask_lateral = permute(mask_lateral, [1, 3, 2]);
-
-% Segmentacion superior
-IMAGE = permute(IMAGE, [3, 2, 1]);
-mask_superior = permute(mask_superior, [3, 2, 1]);
-for i = 1:m
-    seg_superior  = zeros(p,n); 
-    seg_superior(IMAGE(:,:,i) < th) = 1;
-    seg_superior = medfilt2(seg_superior,[5 5]);
-    mask_superior(:,:,i) = seg_superior;
-end
-mask_superior = permute(mask_superior, [3, 2, 1]);
-IMAGE = permute(IMAGE, [3, 2, 1]);
-
-
-%
-for i = 1:p
-    mask3d(:,:,i) = mask_lateral(:,:,i).*mask_front(:,:,i).*mask_superior(:,:,i);
-%     mask3d(:,:,i) = mask3d(:,:,i).*IMAGE(:,:,i).*10;
-end
-% imagine(mask3d,IMAGE)
-
-
-
-
-
-
-% function [msk] = segmentador(I, cara , th)
-% 
-% end
