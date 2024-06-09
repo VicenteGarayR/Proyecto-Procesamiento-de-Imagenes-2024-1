@@ -53,6 +53,8 @@ title('Segmented Image with Class Colors');
 
 BW = bwareaopen(A, 500);
 
+
+
 %%
 function Imagen_f = Segmentar(Im)
 
