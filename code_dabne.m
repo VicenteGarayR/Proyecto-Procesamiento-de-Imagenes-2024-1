@@ -41,23 +41,28 @@ imshow(BW)
 T = otsuthresh(counts);
 BW = imbinarize(patient1_dia_brightblood,T);
 imagine(BW)
-%%
 thres = patient1_dia_brightblood > 0.3;
 imagine(thres)
 %%
 clean = bwareaopen(BW,40,4);
-imagine(clean)
+element = strel('sphere',2);
+seg = imerode(clean,element);
 %%
-obj = regionprops3(clean, 'Extent','Volume');
-extents = obj.Extent;
-volume = obj.Volume;
-idx = (volume > 20000);
-filteredObjects = ismember(bwlabeln(clean), find(idx));
+clean_seg = bwareaopen(seg,100,4);
+comp = bwconncomp(clean_seg,26);
+stats = regionprops(comp, 'Area', 'PixelIdxList');
+% Establecer un umbral para el área mínima
+area = 20000;
 
-D = -bwdist(~filteredObjects);
-mask = imextendedmin(D, 2);
-D2 = imimposemin(D, mask);
-L = watershed(D2);
-watershedVolume = filteredObjects;
-watershedVolume(L == 0) = 0;
-imagine(watershedVolume)
+% Crear una copia de la imagen binaria para modificar
+new_image = clean_seg;
+
+% Recorrer todos los componentes conectados
+for i = 1:comp.NumObjects
+    % Si el área del componente es menor que el umbral, eliminarlo
+    if stats(i).Area < area
+        new_image(comp.PixelIdxList{i}) = 0;
+    end
+end
+%% tamaño real
+new_image = imdilate(new_image,element);
