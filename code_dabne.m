@@ -66,3 +66,6 @@ for i = 1:comp.NumObjects
 end
 %% tamaño real
 new_image = imdilate(new_image,element);
+%%
+% podria ser util mirar bordes en este punto
+%[label_image, regions] = bwlabeln(new_image,26);
