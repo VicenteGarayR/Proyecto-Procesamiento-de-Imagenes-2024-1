@@ -101,24 +101,29 @@ for i = 1:tamano_z
     pause(0.5); % Pausa de 0.5 segundos entre cortes para visualizar la animación
 end
 %% k-means
-% Cargar el volumen (suponemos que 'volume' es tu volumen segmentado 3D)
-% Normalizar los valores de intensidad del volumen
-volume = double(mask) / max(mask(:));
 
 % Obtener las dimensiones del volumen
-[dimX, dimY, dimZ] = size(volume);
+[dimX, dimY, dimZ] = size(mask);
 
 % Crear un array de características (intensidad y coordenadas espaciales)
 [X, Y, Z] = ndgrid(1:dimX, 1:dimY, 1:dimZ);
-features = [volume(:), X(:) / dimX, Y(:) / dimY, Z(:) / dimZ];
+features = [mask(:), X(:) / dimX, Y(:) / dimY, Z(:) / dimZ];
 
 % Aplicar k-means clustering
-numClusters = 3; % Ajusta el número de clusters según sea necesario
-[idx, C] = kmeans(features, numClusters, 'Replicates', 5);
+numClusters = 5; % Ajusta el número de clusters según sea necesario
+[idx, C] = kmeans(features, numClusters, 'Replicates', 1);
 
 % Reconstruir el volumen segmentado basado en los clusters
-segmentedVolume = reshape(idx, [dimX, dimY, dimZ]);
-
+seg = reshape(idx, [dimX, dimY, dimZ]);
+%%
 % Visualizar el resultado
-volshow(segmentedVolume);
-volshow(cora_ao - segmentedVolume);
+volumen= cora_ao - seg;
+volshow(volumen);
+%%
+[tamano_x, tamano_y, tamano_z] = size(volumen);
+for i = 1:tamano_x
+    corte = volumen(:,:,i);
+    imshow(corte)
+    title(['corte',num2str(i)])
+    pause(0.01);
+end 
