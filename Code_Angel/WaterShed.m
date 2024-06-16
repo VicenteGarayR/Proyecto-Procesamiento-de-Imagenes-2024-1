@@ -10,6 +10,7 @@ Image_pat1_dia = squeeze(Pat1_dia(:,117,:));
 
 A=Segmentar(Image_pat1_dia);
 
+% Transformada de distancia
 distanceTransform = bwdist(~A);
 distanceTransform=1-distanceTransform;
 %distanceTransform =1-distanceTransform;
@@ -87,4 +88,3 @@ A = bwareaopen(A, 500);
 Imagen_f=A;
 
 end
-
