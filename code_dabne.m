@@ -21,28 +21,10 @@ patient2_sys_brightblood = mat2gray(permute(patient2_sys_brightblood, [1, 3, 2])
 %%
 imagine(patient1_dia_blackblood,patient1_dia_brightblood)
 %%
-corte = patient1_dia_brightblood(:,:,118);
-thres = corte > 0.3;
-figure;
-subplot(1,3,1)
-imshow(corte)
-subplot(1,3,2)
-imhist(corte)
-subplot(1,3,3)
-imshow(thres)
-
-[counts,x] = imhist(corte);
+[counts,x] = imhist(patient2_dia_brightblood);
 T = otsuthresh(counts);
-BW = imbinarize(corte,T);
-figure;
-imshow(BW)
-%%
-[counts,x] = imhist(patient1_dia_brightblood);
-T = otsuthresh(counts);
-BW = imbinarize(patient1_dia_brightblood,T);
+BW = imbinarize(patient2_dia_brightblood,T);
 %imagine(BW)
-thres = patient1_dia_brightblood > 0.3;
-%imagine(thres)
 %%
 clean = bwareaopen(BW,40,4);
 element = strel('sphere',2);
@@ -67,7 +49,7 @@ for i = 1:comp.NumObjects
 end
 %% tamaño real
 mask = imdilate(new_image,element);
-cora_ao = patient1_dia_brightblood .* mask;
+cora_ao = patient2_dia_brightblood .* mask;
 %%
 % Permutar el volumen para verlo en el plano transversal
 transversal_volume = permute(mask, [2, 3, 1]);
@@ -187,5 +169,12 @@ element = strel('sphere',6);
 ao_mask = imdilate(ao_mask,element);
 ao_mask = imerode(ao_mask,element);
 %%
+% Permutar el volumen para verlo en el plano transversal
+ao_mask = permute(ao_mask, [2, 3, 1]);
+%% paciente 1 en diastole
+element = strel('sphere',2);
 ao_p1 = cora_ao .*ao_mask;
-volshow(ao_p1)
+ao_p1_black = patient1_dia_blackblood .* imdilate(ao_mask,element);
+volshow(ao_p1_black)
+%% paciente 2 en diastole
+
