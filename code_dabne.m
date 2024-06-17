@@ -68,62 +68,124 @@ end
 %% tamaño real
 mask = imdilate(new_image,element);
 cora_ao = patient1_dia_brightblood .* mask;
-%% water sheeds
-[tamano_x, tamano_y, tamano_z] = size(cora_ao);
+%%
+% Permutar el volumen para verlo en el plano transversal
+transversal_volume = permute(mask, [2, 3, 1]);
+%%
+[tamano_x, tamano_y, tamano_z] = size(transversal_volume);
+vol= transversal_volume;
 for i = 1:tamano_z
-    corte = mask(:,:,i);
-    % Transformada de distancia
-    distanceTransform = bwdist(~corte);
-    distanceTransform = 1 - distanceTransform;
-
-    % Encontrar los mínimos extendidos (marcadores)
-    markers = imextendedmin(distanceTransform, 0.6);
-
-    % Modificar la transformación de distancia para forzar los mínimos
-    modifiedDistance = imimposemin(distanceTransform, markers);
-
-    % Aplicar la segmentación por watershed
-    L = watershed(modifiedDistance, 4);
-
-    % Visualizar los resultados
-    subplot(1, 3, 1);
-    imshow(corte, []);
-    title('Imagen en escala de grises');
-
-    subplot(1, 3, 2);
-    imshow(distanceTransform, []);
-    title('Transformada de distancia');
-
-    subplot(1, 3, 3);
-    imshow(label2rgb(L, 'jet', 'k', 'shuffle'));
-    title('Segmentación por Watershed');
-
-    pause(0.5); % Pausa de 0.5 segundos entre cortes para visualizar la animación
+    corte = transversal_volume(:,:,i);
+    stats = regionprops(corte, 'Area', 'PixelIdxList');
+    % Establecer un umbral para el área mínima
+    area = 1000;
+    % Crear una copia de la imagen binaria para modificar
+    new_image = corte;
+    % Recorrer todos los componentes conectados
+    for j = 1: length(stats)
+        % Si el área del componente es mayor que el umbral, eliminarlo
+        if stats(j).Area > area
+            new_image(stats(j).PixelIdxList) = 0;
+        end
+    end
+    vol(:,:,i) = new_image;
 end
-%% k-means
-
-% Obtener las dimensiones del volumen
-[dimX, dimY, dimZ] = size(mask);
-
-% Crear un array de características (intensidad y coordenadas espaciales)
-[X, Y, Z] = ndgrid(1:dimX, 1:dimY, 1:dimZ);
-features = [mask(:), X(:) / dimX, Y(:) / dimY, Z(:) / dimZ];
-
-% Aplicar k-means clustering
-numClusters = 5; % Ajusta el número de clusters según sea necesario
-[idx, C] = kmeans(features, numClusters, 'Replicates', 1);
-
-% Reconstruir el volumen segmentado basado en los clusters
-seg = reshape(idx, [dimX, dimY, dimZ]);
+volshow(vol)
 %%
-% Visualizar el resultado
-volumen= cora_ao - seg;
-volshow(volumen);
+comp_vol = bwconncomp(vol,26);
+stats = regionprops(comp_vol, 'Area', 'PixelIdxList');
+% Establecer un umbral para el área mínima
+area = 30000;
+
+% Crear una copia de la imagen binaria para modificar
+cora = vol;
+
+% Recorrer todos los componentes conectados
+for i = 1:comp_vol.NumObjects
+    % Si el área del componente es menor que el umbral, eliminarlo
+    if stats(i).Area < area
+        cora(comp_vol.PixelIdxList{i}) = 0;
+    end
+end
+volshow(cora)
 %%
-[tamano_x, tamano_y, tamano_z] = size(volumen);
-for i = 1:tamano_x
-    corte = volumen(:,:,i);
-    imshow(corte)
-    title(['corte',num2str(i)])
-    pause(0.01);
-end 
+sin_cora= vol - cora;
+comp_arco = bwconncomp(sin_cora,26);
+stats = regionprops(comp_arco, 'Area', 'PixelIdxList');
+% Establecer un umbral para el área mínima
+area = 25000;
+
+% Crear una copia de la imagen binaria para modificar
+arco = sin_cora;
+
+% Recorrer todos los componentes conectados
+for i = 1:comp_arco.NumObjects
+    % Si el área del componente es menor que el umbral, eliminarlo
+    if stats(i).Area < area
+        arco(comp_arco.PixelIdxList{i}) = 0;
+    end
+end
+volshow(arco)
+%%
+comp_noise = bwconncomp(sin_cora,26);
+stats = regionprops(comp_noise, 'Area', 'PixelIdxList');
+% Establecer un umbral para el área mínima
+area = 5000;
+% Crear una copia de la imagen binaria para modificar
+noise = sin_cora;
+
+% Recorrer todos los componentes conectados
+for i = 1:comp_noise.NumObjects
+    % Si el área del componente es mayor que el umbral, eliminarlo
+    if stats(i).Area > area
+        noise(comp_noise.PixelIdxList{i}) = 0;
+    end
+end
+volshow(noise)
+%%
+vol_new = sin_cora - noise;
+comp_ao = bwconncomp(vol_new,26);
+stats = regionprops(comp_ao, 'Centroid', 'PixelIdxList');
+% Establecer un umbral para el área mínima
+centr = 50;
+% Crear una copia de la imagen binaria para modificar
+ao_t = vol_new;
+
+% Recorrer todos los componentes conectados
+for i = 1:comp_ao.NumObjects
+    % Si el área del componente es mayor que el umbral, eliminarlo
+    if stats(i).Centroid > centr
+        ao_t(comp_ao.PixelIdxList{i}) = 0;
+    end
+end
+volshow(ao_t)
+%%
+element = strel('sphere',3);
+arco_separate = imerode(arco,element);
+%%
+comp_arc = bwconncomp(arco_separate,26);
+stats = regionprops(comp_arc, 'Area', 'PixelIdxList');
+% Establecer un umbral para el área mínima
+area = 2800;
+
+% Crear una copia de la imagen binaria para modificar
+arc = arco_separate;
+
+% Recorrer todos los componentes conectados
+for i = 1:comp_arc.NumObjects
+    % Si el área del componente es menor que el umbral, eliminarlo
+    if stats(i).Area < area
+        arc(comp_arc.PixelIdxList{i}) = 0;
+    end
+end
+volshow(arc)
+%%
+arco_ao = imdilate(arc,element);
+%%
+ao_mask = vol_new - ao_t + arco_ao;
+element = strel('sphere',6);
+ao_mask = imdilate(ao_mask,element);
+ao_mask = imerode(ao_mask,element);
+%%
+ao_p1 = cora_ao .*ao_mask;
+volshow(ao_p1)
