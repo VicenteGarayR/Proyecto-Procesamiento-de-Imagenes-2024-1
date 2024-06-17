@@ -21,9 +21,9 @@ patient2_sys_brightblood = mat2gray(permute(patient2_sys_brightblood, [1, 3, 2])
 %%
 imagine(patient1_dia_blackblood,patient1_dia_brightblood)
 %%
-[counts,x] = imhist(patient2_dia_brightblood);
+[counts,x] = imhist(patient1_dia_brightblood);
 T = otsuthresh(counts);
-BW = imbinarize(patient2_dia_brightblood,T);
+BW = imbinarize(patient1_dia_brightblood,T);
 %imagine(BW)
 %%
 clean = bwareaopen(BW,40,4);
@@ -176,5 +176,3 @@ element = strel('sphere',2);
 ao_p1 = cora_ao .*ao_mask;
 ao_p1_black = patient1_dia_blackblood .* imdilate(ao_mask,element);
 volshow(ao_p1_black)
-%% paciente 2 en diastole
-
