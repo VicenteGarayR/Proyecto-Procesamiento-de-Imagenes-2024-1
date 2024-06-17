@@ -6,21 +6,59 @@ close all;
 Imagen = load("project_data.mat");
 Pat1_dia = Imagen.patient1_dia;
 Pat1_dia = mat2gray(Pat1_dia);
-Image_pat1_dia = squeeze(Pat1_dia(:,117,:));
+
+Dim=size(Pat1_dia);
+
+for i=1:Dim(1)
+Image_pat1_dia = squeeze(Pat1_dia(i,:,:));
 
 % figure,imshow(Image_pat1_dia);
 
-Imagen_f=Segmentar(Image_pat1_dia);
+Imagen_f(i,:,:)=Segmentar(Image_pat1_dia);
+%imwrite(Imagen_f{i}, "Imagenes.gif", 'gif', 'WriteMode');
+end
 
-figure,imshow(Imagen_f);
+for i=1:Dim(2)
+Image_pat1_dia = squeeze(Pat1_dia(:,i,:));
 
-figure,imhist(Imagen_f);
+% figure,imshow(Image_pat1_dia);
+
+Imagen_f(:,i,:)=Segmentar(Image_pat1_dia);
+% Imagen_f=Segmentar(Image_pat1_dia);
+% imshow(Imagen_f);
+
+end
+
+for i=1:Dim(3)
+Image_pat1_dia = squeeze(Pat1_dia(:,:,i));
+
+% figure,imshow(Image_pat1_dia);
+
+Imagen_f(:,:,i)=Segmentar(Image_pat1_dia);
+
+end
+
+Imagen_f = bwareaopen(Imagen_f, 50000);
 
 
+%figure,imshow(Imagen_f);
+%figure,imhist(Imagen_f);
+
+% Paso 2: Etiquetar las regiones conectadas
+labeledVolume = bwlabeln(Imagen_f);
+
+A=labeledVolume==1;
+
+% Paso 3: Obtener las propiedades de las regiones conectadas
+stats = regionprops3(labeledVolume, 'Volume', 'BoundingBox', 'Centroid');
+
+disp("Succes");
+%disp(labeledVolume);
+disp(stats);
 %%
 image=Image_pat1_dia;
 
-figure, imhist(image);
+%figure, imhist(image);
 
 % Compute the histogram
 counts = imhist(image);
@@ -51,8 +89,6 @@ figure;
 imshow(segmented_image_rgb);
 title('Segmented Image with Class Colors');
 
-BW = bwareaopen(A, 500);
-
 
 
 %%
@@ -61,7 +97,8 @@ function Imagen_f = Segmentar(Im)
 [count,bin]=histcounts(Im);
 otsu=otsuthresh(count);
 A = Im>otsu;
-A = bwareaopen(A, 500);
+disp(ceil(sum(A(:))/20));
+A = bwareaopen(A, 100);
 Imagen_f=A;
 
 end
