@@ -19,16 +19,17 @@ patient2_dia_brightblood = mat2gray(permute(patient2_dia_brightblood, [1, 3, 2])
 patient2_sys_blackblood = mat2gray(permute(patient2_sys_blackblood, [1, 3, 2]));
 patient2_sys_brightblood = mat2gray(permute(patient2_sys_brightblood, [1, 3, 2]));
 %%
-imagine(patient1_dia_blackblood,patient1_dia_brightblood)
+imagine(patient2_dia_blackblood,patient2_dia_brightblood)
 %%
-[counts,x] = imhist(patient1_dia_brightblood);
+[counts,x] = imhist(patient2_dia_brightblood);
 T = otsuthresh(counts);
-BW = imbinarize(patient1_dia_brightblood,T);
-%imagine(BW)
+BW = imbinarize(patient2_dia_brightblood,T);
+%volshow(BW)
 %%
 clean = bwareaopen(BW,40,4);
 element = strel('sphere',2);
 seg = imerode(clean,element);
+volshow(seg)
 %%
 clean_seg = bwareaopen(seg,100,4);
 
@@ -50,6 +51,7 @@ end
 %% tamaño real
 mask = imdilate(new_image,element);
 cora_ao = patient2_dia_brightblood .* mask;
+volshow(cora_ao)
 %%
 % Permutar el volumen para verlo en el plano transversal
 transversal_volume = permute(mask, [2, 3, 1]);
@@ -60,7 +62,7 @@ for i = 1:tamano_z
     corte = transversal_volume(:,:,i);
     stats = regionprops(corte, 'Area', 'PixelIdxList');
     % Establecer un umbral para el área mínima
-    area = 1000;
+    area = 1500;
     % Crear una copia de la imagen binaria para modificar
     new_image = corte;
     % Recorrer todos los componentes conectados
@@ -77,7 +79,7 @@ volshow(vol)
 comp_vol = bwconncomp(vol,26);
 stats = regionprops(comp_vol, 'Area', 'PixelIdxList');
 % Establecer un umbral para el área mínima
-area = 30000;
+area = 46000;
 
 % Crear una copia de la imagen binaria para modificar
 cora = vol;
@@ -95,7 +97,7 @@ sin_cora= vol - cora;
 comp_arco = bwconncomp(sin_cora,26);
 stats = regionprops(comp_arco, 'Area', 'PixelIdxList');
 % Establecer un umbral para el área mínima
-area = 25000;
+area = 30000;
 
 % Crear una copia de la imagen binaria para modificar
 arco = sin_cora;
@@ -112,7 +114,7 @@ volshow(arco)
 comp_noise = bwconncomp(sin_cora,26);
 stats = regionprops(comp_noise, 'Area', 'PixelIdxList');
 % Establecer un umbral para el área mínima
-area = 5000;
+area = 3200;
 % Crear una copia de la imagen binaria para modificar
 noise = sin_cora;
 
