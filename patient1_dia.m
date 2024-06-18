@@ -49,7 +49,7 @@ for i = 1:comp.NumObjects
 end
 %% tamaño real
 mask = imdilate(new_image,element);
-cora_ao = patient2_dia_brightblood .* mask;
+cora_ao = patient1_dia_brightblood .* mask;
 %%
 % Permutar el volumen para verlo en el plano transversal
 transversal_volume = permute(mask, [2, 3, 1]);
@@ -170,6 +170,7 @@ ao_mask = imdilate(ao_mask,element);
 ao_mask = imerode(ao_mask,element);
 %%
 % Permutar el volumen para verlo en el plano transversal
+ao_mask = permute(ao_mask, [2, 3, 1]);
 ao_mask = permute(ao_mask, [2, 3, 1]);
 %% paciente 1 en diastole
 element = strel('sphere',2);
