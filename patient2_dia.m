@@ -173,6 +173,7 @@ ao_mask = imerode(ao_mask,element);
 %%
 % Permutar el volumen para verlo en el plano transversal
 ao_mask = permute(ao_mask, [2, 3, 1]);
+ao_mask = permute(ao_mask, [2, 3, 1]);
 %% paciente 1 en diastole
 element = strel('sphere',2);
 ao_p1 = cora_ao .*ao_mask;

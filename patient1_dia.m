@@ -72,7 +72,6 @@ for i = 1:tamano_z
     end
     vol(:,:,i) = new_image;
 end
-volshow(vol)
 %%
 comp_vol = bwconncomp(vol,26);
 stats = regionprops(comp_vol, 'Area', 'PixelIdxList');
@@ -89,7 +88,6 @@ for i = 1:comp_vol.NumObjects
         cora(comp_vol.PixelIdxList{i}) = 0;
     end
 end
-volshow(cora)
 %%
 sin_cora= vol - cora;
 comp_arco = bwconncomp(sin_cora,26);
@@ -107,7 +105,6 @@ for i = 1:comp_arco.NumObjects
         arco(comp_arco.PixelIdxList{i}) = 0;
     end
 end
-volshow(arco)
 %%
 comp_noise = bwconncomp(sin_cora,26);
 stats = regionprops(comp_noise, 'Area', 'PixelIdxList');
@@ -123,7 +120,6 @@ for i = 1:comp_noise.NumObjects
         noise(comp_noise.PixelIdxList{i}) = 0;
     end
 end
-volshow(noise)
 %%
 vol_new = sin_cora - noise;
 comp_ao = bwconncomp(vol_new,26);
@@ -140,7 +136,6 @@ for i = 1:comp_ao.NumObjects
         ao_t(comp_ao.PixelIdxList{i}) = 0;
     end
 end
-volshow(ao_t)
 %%
 element = strel('sphere',3);
 arco_separate = imerode(arco,element);
@@ -160,7 +155,6 @@ for i = 1:comp_arc.NumObjects
         arc(comp_arc.PixelIdxList{i}) = 0;
     end
 end
-volshow(arc)
 %%
 arco_ao = imdilate(arc,element);
 %%
@@ -176,4 +170,6 @@ ao_mask = permute(ao_mask, [2, 3, 1]);
 element = strel('sphere',2);
 ao_p1 = cora_ao .*ao_mask;
 ao_p1_black = patient1_dia_blackblood .* imdilate(ao_mask,element);
-volshow(ao_p1_black)
+volshow(ao_p1)
+%%
+%save('patient1_dia.mat','ao_p1','ao_p1_black','ao_mask')
