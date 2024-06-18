@@ -53,7 +53,6 @@ cora_ao = patient1_dia_brightblood .* mask;
 %%
 % Permutar el volumen para verlo en el plano transversal
 transversal_volume = permute(mask, [2, 3, 1]);
-%%
 [tamano_x, tamano_y, tamano_z] = size(transversal_volume);
 vol= transversal_volume;
 for i = 1:tamano_z
@@ -162,8 +161,6 @@ ao_mask = vol_new - ao_t + arco_ao;
 element = strel('sphere',6);
 ao_mask = imdilate(ao_mask,element);
 ao_mask = imerode(ao_mask,element);
-%%
-% Permutar el volumen para verlo en el plano transversal
 ao_mask = permute(ao_mask, [2, 3, 1]);
 ao_mask = permute(ao_mask, [2, 3, 1]);
 %% paciente 1 en diastole

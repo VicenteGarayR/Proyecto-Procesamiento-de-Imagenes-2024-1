@@ -29,14 +29,12 @@ BW = imbinarize(patient2_dia_brightblood,T);
 clean = bwareaopen(BW,40,4);
 element = strel('sphere',2);
 seg = imerode(clean,element);
-volshow(seg)
 %%
 clean_seg = bwareaopen(seg,100,4);
-
 comp = bwconncomp(clean_seg,26);
 stats = regionprops(comp, 'Area', 'PixelIdxList');
 % Establecer un umbral para el área mínima
-area = 20000;
+area = 70000;
 
 % Crear una copia de la imagen binaria para modificar
 new_image = clean_seg;
@@ -51,11 +49,9 @@ end
 %% tamaño real
 mask = imdilate(new_image,element);
 cora_ao = patient2_dia_brightblood .* mask;
-volshow(cora_ao)
 %%
 % Permutar el volumen para verlo en el plano transversal
 transversal_volume = permute(mask, [2, 3, 1]);
-%%
 [tamano_x, tamano_y, tamano_z] = size(transversal_volume);
 vol= transversal_volume;
 for i = 1:tamano_z
@@ -74,7 +70,6 @@ for i = 1:tamano_z
     end
     vol(:,:,i) = new_image;
 end
-volshow(vol)
 %%
 comp_vol = bwconncomp(vol,26);
 stats = regionprops(comp_vol, 'Area', 'PixelIdxList');
@@ -91,7 +86,6 @@ for i = 1:comp_vol.NumObjects
         cora(comp_vol.PixelIdxList{i}) = 0;
     end
 end
-volshow(cora)
 %%
 sin_cora= vol - cora;
 comp_arco = bwconncomp(sin_cora,26);
@@ -109,12 +103,11 @@ for i = 1:comp_arco.NumObjects
         arco(comp_arco.PixelIdxList{i}) = 0;
     end
 end
-volshow(arco)
 %%
 comp_noise = bwconncomp(sin_cora,26);
 stats = regionprops(comp_noise, 'Area', 'PixelIdxList');
 % Establecer un umbral para el área mínima
-area = 3200;
+area = 1000;
 % Crear una copia de la imagen binaria para modificar
 noise = sin_cora;
 
@@ -125,7 +118,6 @@ for i = 1:comp_noise.NumObjects
         noise(comp_noise.PixelIdxList{i}) = 0;
     end
 end
-volshow(noise)
 %%
 vol_new = sin_cora - noise;
 comp_ao = bwconncomp(vol_new,26);
@@ -142,7 +134,6 @@ for i = 1:comp_ao.NumObjects
         ao_t(comp_ao.PixelIdxList{i}) = 0;
     end
 end
-volshow(ao_t)
 %%
 element = strel('sphere',3);
 arco_separate = imerode(arco,element);
@@ -150,7 +141,7 @@ arco_separate = imerode(arco,element);
 comp_arc = bwconncomp(arco_separate,26);
 stats = regionprops(comp_arc, 'Area', 'PixelIdxList');
 % Establecer un umbral para el área mínima
-area = 2800;
+area = 5000;
 
 % Crear una copia de la imagen binaria para modificar
 arc = arco_separate;
@@ -162,20 +153,19 @@ for i = 1:comp_arc.NumObjects
         arc(comp_arc.PixelIdxList{i}) = 0;
     end
 end
-volshow(arc)
-%%
 arco_ao = imdilate(arc,element);
 %%
-ao_mask = vol_new - ao_t + arco_ao;
+ao_mask_p2 = vol_new - ao_t + arco_ao;
 element = strel('sphere',6);
-ao_mask = imdilate(ao_mask,element);
-ao_mask = imerode(ao_mask,element);
-%%
-% Permutar el volumen para verlo en el plano transversal
-ao_mask = permute(ao_mask, [2, 3, 1]);
-ao_mask = permute(ao_mask, [2, 3, 1]);
-%% paciente 1 en diastole
+ao_mask_p2 = imdilate(ao_mask_p2,element);
+ao_mask_p2 = imerode(ao_mask_p2,element);
+ao_mask_p2 = permute(ao_mask_p2, [2, 3, 1]);
+ao_mask_p2 = permute(ao_mask_p2, [2, 3, 1]);
+volshow(ao_mask_p2)
+%% paciente 2 en diastole
 element = strel('sphere',2);
-ao_p1 = cora_ao .*ao_mask;
-ao_p1_black = patient1_dia_blackblood .* imdilate(ao_mask,element);
-volshow(ao_p1_black)
+ao_p2 = cora_ao .*ao_mask_p2;
+ao_p2_black = patient2_dia_blackblood .* imdilate(ao_mask_p2,element);
+volshow(ao_p2)
+%%
+%save('patient2_dia.mat','ao_p2','ao_p2_black','ao_mask_p2')
