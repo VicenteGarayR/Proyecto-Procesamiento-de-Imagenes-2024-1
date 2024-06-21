@@ -17,8 +17,8 @@ patient2_dia_brightblood = mat2gray(permute(patient2_dia_brightblood, [1, 3, 2])
 patient2_sys_blackblood = mat2gray(permute(patient2_sys_blackblood, [1, 3, 2]));
 patient2_sys_brightblood = mat2gray(permute(patient2_sys_brightblood, [1, 3, 2]));
 %% first threshold
-patient= patient1_sys_brightblood;
-patient_black= patient1_sys_blackblood;
+patient= patient1_dia_brightblood;
+patient_black= patient1_dia_blackblood;
 [counts,x] = imhist(patient);
 T = otsuthresh(counts);
 BW = imbinarize(patient,T);
