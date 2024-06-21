@@ -17,13 +17,13 @@ patient2_dia_brightblood = mat2gray(permute(patient2_dia_brightblood, [1, 3, 2])
 patient2_sys_blackblood = mat2gray(permute(patient2_sys_blackblood, [1, 3, 2]));
 patient2_sys_brightblood = mat2gray(permute(patient2_sys_brightblood, [1, 3, 2]));
 %% first threshold
-patient= patient1_sys_brightblood;
+patient= patient2_dia_brightblood;
+patient_black= patient2_dia_blackblood;
 [counts,x] = imhist(patient);
 T = otsuthresh(counts);
 BW = imbinarize(patient,T);
-thres = patient1_sys_brightblood > 1000;
-clean = bwareaopen(thres,40,4);
-element = strel('sphere',2);
+clean = bwareaopen(BW,40,4);
+element = strel('sphere',3);
 clean_seg = imerode(clean,element);
 clean_seg = bwareaopen(clean_seg,100,4);
 %%
@@ -72,7 +72,6 @@ while area > 0
     % Decrementar el área mínima
     area = area - 100;
 end
-volshow(vol)
 %%
 % Connecting components
 comp = bwconncomp(vol, 26);
@@ -85,7 +84,6 @@ for i = 1:comp.NumObjects
         copa(comp.PixelIdxList{i}) = 1;
     end
 end
-volshow(copa)
 %%
 piece = false(size(copa)); % Inicializar volumen filtrado
 
@@ -118,7 +116,6 @@ while area > 0
     area = area - 100;
 end
 top = copa - piece;
-volshow(piece)
 %%
 comp = bwconncomp(piece, 26);
 stats = regionprops(comp, 'Area', 'PixelIdxList');
@@ -133,7 +130,7 @@ comp = bwconncomp(piece1, 26);
 % Si el número de componentes es mayor que 1, suprimir el área más pequeña
 if comp.NumObjects > 1
     stats = regionprops(comp, 'Area', 'PixelIdxList');
-    min_area = max([stats.Area]);
+    min_area = min([stats.Area]);
     for i = 1:comp.NumObjects
         if stats(i).Area == min_area
             piece1(comp.PixelIdxList{i}) = 0;
@@ -141,7 +138,6 @@ if comp.NumObjects > 1
         end
     end
 end
-volshow(piece1)
 %%
 comp = bwconncomp(vol, 26);
 stats = regionprops(comp, 'Centroid', 'PixelIdxList');
@@ -179,14 +175,13 @@ if comp.NumObjects > 1
 end
 arco1= imdilate(arco1,element);
 %%
-ao_mask = arco1 + torax;
-ao_mask = imdilate(ao_mask,element);
-ao_mask = permute(ao_mask, [2, 3, 1]);
-ao_mask = permute(ao_mask, [2, 3, 1]);
-aorta = patient .*ao_mask;
-aorta_black = patient1_sys_blackblood .* imdilate(ao_mask,element);
-volshow(ao_mask)
+ao_maskp2_dia = arco1 + torax;
+ao_maskp2_dia = imdilate(ao_maskp2_dia,element);
+ao_maskp2_dia = permute(ao_maskp2_dia, [2, 3, 1]);
+ao_maskp2_dia = permute(ao_maskp2_dia, [2, 3, 1]);
+aop2_dia = patient .*ao_maskp2_dia;
+aop2_dia_black = patient_black .* imdilate(ao_maskp2_dia,element);
 %% Parametro de volumen 
-Volumen = sum(ao_mask,'all');
+Volumenp2_dia = sum(ao_maskp2_dia,'all');
 %%
-%save('patient1_dia.mat','ao_p1','ao_p1_black','ao_mask')
+save('patient2_dia.mat','aop2_dia','aop2_dia_black','ao_maskp2_dia','Volumenp2_dia')
