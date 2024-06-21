@@ -17,12 +17,13 @@ patient2_dia_brightblood = mat2gray(permute(patient2_dia_brightblood, [1, 3, 2])
 patient2_sys_blackblood = mat2gray(permute(patient2_sys_blackblood, [1, 3, 2]));
 patient2_sys_brightblood = mat2gray(permute(patient2_sys_brightblood, [1, 3, 2]));
 %% first threshold
-patient= patient2_sys_brightblood;
+patient= patient1_sys_brightblood;
 [counts,x] = imhist(patient);
 T = otsuthresh(counts);
 BW = imbinarize(patient,T);
-clean = bwareaopen(BW,40,4);
-element = strel('sphere',3);
+thres = patient1_sys_brightblood > 1000;
+clean = bwareaopen(thres,40,4);
+element = strel('sphere',2);
 clean_seg = imerode(clean,element);
 clean_seg = bwareaopen(clean_seg,100,4);
 %%
@@ -37,15 +38,13 @@ for i = 1:comp.NumObjects
         volume(comp.PixelIdxList{i}) = 1;
     end
 end
-%volume = imdilate(volume, element);
 %%
-
 % Permutar el volumen para verlo en el plano transversal
 transversal_volume = permute(volume, [2, 3, 1]);
 [tamano_x, tamano_y, tamano_z] = size(transversal_volume);
 vol = false(size(transversal_volume)); % Inicializar volumen filtrado
 
-area = 2900; % Inicializar el área en 2000
+area = 2900; % Inicializar el área en 2900
 while area > 0
     for i = 1:tamano_z
         corte = transversal_volume(:, :, i);
@@ -86,35 +85,108 @@ for i = 1:comp.NumObjects
         copa(comp.PixelIdxList{i}) = 1;
     end
 end
+volshow(copa)
 %%
-% Connecting components and removing small components
-comp = bwconncomp(vol, 26);
+piece = false(size(copa)); % Inicializar volumen filtrado
+
+area = 900; % Inicializar el área en 2900
+while area > 0
+    for i = 1:tamano_z
+        corte = copa(:, :, i);
+        stats = regionprops(corte, 'Area', 'PixelIdxList');
+        
+        % Crear una copia de la imagen binaria para modificar
+        new_image = false(size(corte));
+        
+        % Conservar los componentes con área menor o igual al umbral actual
+        for j = 1:length(stats)
+            if stats(j).Area >= area
+                new_image(stats(j).PixelIdxList) = true;
+            end
+        end
+        
+        piece(:, :, i) = new_image;
+    end
+    
+    % Verificar el número de componentes en el volumen final
+    comp_vol = bwconncomp(piece, 26);
+    if comp_vol.NumObjects > 1
+        break;
+    end
+    
+    % Decrementar el área mínima
+    area = area - 100;
+end
+top = copa - piece;
+volshow(piece)
+%%
+comp = bwconncomp(piece, 26);
 stats = regionprops(comp, 'Area', 'PixelIdxList');
-noise = zeros(size(vol));
-torax = zeros(size(vol));
-if comp.NumObjects > 5
-    min_area = min([stats.Area]);
-    for i = 1:comp.NumObjects
-        if stats(i).Area == min_area
-            noise(comp.PixelIdxList{i}) = 1;
-        end
+piece1 =  piece;
+max_area = max([stats.Area]);
+for i = 1:comp.NumObjects
+    if stats(i).Area == max_area
+        piece1(comp.PixelIdxList{i}) = 0;
     end
-    vol = vol - noise;
-    % Connecting components and 
-    comp = bwconncomp(vol, 26);
-    min_area = min([stats.Area]);
+end
+comp = bwconncomp(piece1, 26);
+% Si el número de componentes es mayor que 1, suprimir el área más pequeña
+if comp.NumObjects > 1
+    stats = regionprops(comp, 'Area', 'PixelIdxList');
+    min_area = max([stats.Area]);
     for i = 1:comp.NumObjects
         if stats(i).Area == min_area
-            torax(comp.PixelIdxList{i}) = 1;
-        end
-    end
-else
-    min_area = min([stats.Area]);
-    for i = 1:comp.NumObjects
-        if stats(i).Area == min_area
-            torax(comp.PixelIdxList{i}) = 1;
+            piece1(comp.PixelIdxList{i}) = 0;
+            break; % Romper el ciclo después de suprimir el área más pequeña
         end
     end
 end
-volshow(torax)
+volshow(piece1)
 %%
+comp = bwconncomp(vol, 26);
+stats = regionprops(comp, 'Centroid', 'PixelIdxList');
+torax = vol;
+max_centroid = max([stats.Centroid]);
+for i = 1:comp.NumObjects
+    if stats(i).Centroid < max_centroid
+        torax(comp.PixelIdxList{i}) = 0;
+    end
+end
+torax = torax + piece1;
+%%
+% Connecting components
+comp = bwconncomp(imerode(top,element), 26);
+stats = regionprops(comp, 'Centroid', 'PixelIdxList');
+arco = zeros(size(top));
+max_centroid = max([stats.Centroid]);
+for i = 1:comp.NumObjects
+    if stats(i).Centroid < max_centroid
+        arco(comp.PixelIdxList{i}) = 1;
+    end
+end
+comp = bwconncomp(arco, 26);
+arco1 = zeros(size(arco));
+% Si el número de componentes es mayor que 1, conservar el área más grande
+if comp.NumObjects > 1
+    stats = regionprops(comp, 'Area', 'PixelIdxList');
+    max_area = max([stats.Area]);
+    for i = 1:comp.NumObjects
+        if stats(i).Area == max_area
+            arco1(comp.PixelIdxList{i}) = 1;
+            break; % Romper el ciclo después de conservar el área más grande
+        end
+    end
+end
+arco1= imdilate(arco1,element);
+%%
+ao_mask = arco1 + torax;
+ao_mask = imdilate(ao_mask,element);
+ao_mask = permute(ao_mask, [2, 3, 1]);
+ao_mask = permute(ao_mask, [2, 3, 1]);
+aorta = patient .*ao_mask;
+aorta_black = patient1_sys_blackblood .* imdilate(ao_mask,element);
+volshow(ao_mask)
+%% Parametro de volumen 
+Volumen = sum(ao_mask,'all');
+%%
+%save('patient1_dia.mat','ao_p1','ao_p1_black','ao_mask')
