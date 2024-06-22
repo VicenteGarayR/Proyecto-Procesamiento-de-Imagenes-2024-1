@@ -176,13 +176,15 @@ if comp.NumObjects > 1
 end
 arco1= imdilate(arco1,element);
 %%
-element = strel('sphere',3);
+element = strel('sphere',6);
 ao_maskp1_sys = arco1 + torax;
 ao_maskp1_sys = imdilate(ao_maskp1_sys,element);
 ao_maskp1_sys = permute(ao_maskp1_sys, [2, 3, 1]);
 ao_maskp1_sys = permute(ao_maskp1_sys, [2, 3, 1]);
-aop1_sys = patient .*ao_maskp1_sys;
+ao_maskp1_sys = imerode(ao_maskp1_sys,element);
 element = strel('sphere',2);
+ao_maskp1_sys = imdilate(ao_maskp1_sys,element);
+aop1_sys = patient .*ao_maskp1_sys;
 aop1_sys_black = patient_black .* imdilate(ao_maskp1_sys,element);
 %% Parametro de volumen 
 Volumenp1_sys = sum(ao_maskp1_sys,'all');
