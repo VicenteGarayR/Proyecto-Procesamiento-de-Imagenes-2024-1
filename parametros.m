@@ -12,10 +12,10 @@ load("patient2_sys.mat")
 img = ao_mask_p2;
 
 %% Volumen
-volumen_p1_dia= Volumenp1_dia * 0.0033750;
-volumen_p2_dia= Volumenp2_dia * 0.0033750;
-volumen_p1_sys= Volumenp1_sys * 0.0033750;
-volumen_p2_sys= Volumenp2_sys * 0.0033750;
+volumen_p1_dia= Volumenp1_dia * 0.0033750; %ml
+volumen_p2_dia= Volumenp2_dia * 0.0033750; %ml
+volumen_p1_sys= Volumenp1_sys * 0.0033750; %ml
+volumen_p2_sys= Volumenp2_sys * 0.0033750; %ml
 %% Diametro union sinotubular
 
 [rows, cols, depth] = size(img);
