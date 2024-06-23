@@ -3,12 +3,20 @@ clear;
 clc;
 close all;
 
-Imagen = load("project_data.mat");
-Pat1_dia = Imagen.patient1_dia;
-Pat1_dia = mat2gray(Pat1_dia);
+load("project_data_v2.mat");
+Pat1_dia = patient1_dia_blacktblood;
+Pat1_dia=mat2gray(Pat1_dia);
+[count,bin]=histcounts(Pat1_dia);
+otsu=otsuthresh(count);
+Pat1_dia = Pat1_dia<otsu;
+% Aplicar apertura en 3D para eliminar ruido pequeño
+se = strel('sphere', 5); % Elemento estructurante esférico de radio 3
+V_apertura = imopen(Pat1_dia, se);
+volshow(V_apertura)
 
-Dim=size(Pat1_dia);
+%% 0.55 T para campo
 
+%%
 for i=1:Dim(1)
 Image_pat1_dia = squeeze(Pat1_dia(i,:,:));
 
@@ -59,7 +67,6 @@ disp(stats);
 image=Image_pat1_dia;
 
 %figure, imhist(image);
-
 % Compute the histogram
 counts = imhist(image);
 
@@ -89,16 +96,15 @@ figure;
 imshow(segmented_image_rgb);
 title('Segmented Image with Class Colors');
 
-
-
 %%
 function Imagen_f = Segmentar(Im)
-
 [count,bin]=histcounts(Im);
 otsu=otsuthresh(count);
 A = Im>otsu;
 disp(ceil(sum(A(:))/20));
 A = bwareaopen(A, 100);
 Imagen_f=A;
-
 end
+%%
+%%
+%%
