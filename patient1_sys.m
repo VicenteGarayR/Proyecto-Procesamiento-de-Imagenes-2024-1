@@ -24,10 +24,25 @@ T = otsuthresh(counts);
 BW = imbinarize(patient,T);
 thres = patient1_sys_brightblood > 1000;
 clean = bwareaopen(thres,40,4);
+element_cora = strel('sphere',1);
+clean_cora = imerode(clean,element_cora);
+clean_cora = bwareaopen(clean_cora,100,4);
+% Connecting components and removing small components
+comp = bwconncomp(clean_cora, 26);
+stats = regionprops(comp, 'Area', 'PixelIdxList');
+volume_cora = zeros(size(clean_cora));
+
+max_area = max([stats.Area]);
+for i = 1:comp.NumObjects
+    if stats(i).Area == max_area
+        volume_cora(comp.PixelIdxList{i}) = 1;
+    end
+end
+volume_cora = imdilate(volume_cora,element_cora);
+%%
 element = strel('sphere',2);
 clean_seg = imerode(clean,element);
 clean_seg = bwareaopen(clean_seg,100,4);
-%%
 % Connecting components and removing small components
 comp = bwconncomp(clean_seg, 26);
 stats = regionprops(comp, 'Area', 'PixelIdxList');
@@ -176,17 +191,18 @@ if comp.NumObjects > 1
 end
 arco1= imdilate(arco1,element);
 %%
-element = strel('sphere',6);
 ao_maskp1_sys = arco1 + torax;
+element = strel('sphere',6);
 ao_maskp1_sys = imdilate(ao_maskp1_sys,element);
 ao_maskp1_sys = permute(ao_maskp1_sys, [2, 3, 1]);
 ao_maskp1_sys = permute(ao_maskp1_sys, [2, 3, 1]);
 ao_maskp1_sys = imerode(ao_maskp1_sys,element);
-element = strel('sphere',2);
+element = strel('sphere',3);
 ao_maskp1_sys = imdilate(ao_maskp1_sys,element);
-aop1_sys = patient .*ao_maskp1_sys;
-aop1_sys_black = patient_black .* imdilate(ao_maskp1_sys,element);
+mask_p1_sys = volume_cora .* ao_maskp1_sys;
+aop1_sys = patient .*mask_p1_sys;
+aop1_sys_black = patient_black .* imdilate(mask_p1_sys,element);
 %% Parametro de volumen 
 Volumenp1_sys = sum(ao_maskp1_sys,'all');
 %%
-save('patient1_sys.mat','aop1_sys','aop1_sys_black','ao_maskp1_sys','Volumenp1_sys')
+save('patient1_sys.mat','aop1_sys','aop1_sys_black','mask_p1_sys','Volumenp1_sys')

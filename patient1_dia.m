@@ -23,10 +23,25 @@ patient_black= patient1_dia_blackblood;
 T = otsuthresh(counts);
 BW = imbinarize(patient,T);
 clean = bwareaopen(BW,40,4);
+element_cora = strel('sphere',1);
+clean_cora = imerode(clean,element_cora);
+clean_cora = bwareaopen(clean_cora,100,4);
+% Connecting components and removing small components
+comp = bwconncomp(clean_cora, 26);
+stats = regionprops(comp, 'Area', 'PixelIdxList');
+volume_cora = zeros(size(clean_cora));
+
+max_area = max([stats.Area]);
+for i = 1:comp.NumObjects
+    if stats(i).Area == max_area
+        volume_cora(comp.PixelIdxList{i}) = 1;
+    end
+end
+volume_cora = imdilate(volume_cora,element_cora);
+%%
 element = strel('sphere',2);
 clean_seg = imerode(clean,element);
 clean_seg = bwareaopen(clean_seg,100,4);
-%%
 % Connecting components and removing small components
 comp = bwconncomp(clean_seg, 26);
 stats = regionprops(comp, 'Area', 'PixelIdxList');
@@ -179,9 +194,11 @@ ao_maskp1_dia = arco1 + torax;
 ao_maskp1_dia = imdilate(ao_maskp1_dia,element);
 ao_maskp1_dia = permute(ao_maskp1_dia, [2, 3, 1]);
 ao_maskp1_dia = permute(ao_maskp1_dia, [2, 3, 1]);
-aop1_dia = patient .*ao_maskp1_dia;
-aop1_dia_black = patient_black .* imdilate(ao_maskp1_dia,element);
+mascara_p1_dia = imdilate(ao_maskp1_dia,element);
+mask_p1_dia = volume_cora .* mascara_p1_dia;
+aop1_dia = patient .*mask_p1_dia;
+aop1_dia_black = patient_black .* imdilate(mask_p1_dia,element);
 %% Parametro de volumen 
-Volumenp1_dia = sum(ao_maskp1_dia,'all');
+Volumenp1_dia = sum(mask_p1_dia,'all');
 %%
-save('patient1_dia.mat','aop1_dia','aop1_dia_black','ao_maskp1_dia','Volumenp1_dia')
+save('patient1_dia.mat','aop1_dia','aop1_dia_black','mask_p1_dia','Volumenp1_dia')
