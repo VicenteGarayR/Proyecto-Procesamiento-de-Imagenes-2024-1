@@ -17,8 +17,8 @@ patient2_dia_brightblood = mat2gray(permute(patient2_dia_brightblood, [1, 3, 2])
 patient2_sys_blackblood = mat2gray(permute(patient2_sys_blackblood, [1, 3, 2]));
 patient2_sys_brightblood = mat2gray(permute(patient2_sys_brightblood, [1, 3, 2]));
 %% first threshold
-patient= patient2_dia_brightblood;
-patient_black= patient2_dia_blackblood;
+patient= patient2_sys_brightblood;
+patient_black= patient2_sys_blackblood;
 [counts,x] = imhist(patient);
 T = otsuthresh(counts);
 BW = imbinarize(patient,T);
@@ -190,15 +190,15 @@ if comp.NumObjects > 1
 end
 arco1= imdilate(arco1,element);
 %%
-ao_maskp2_dia = arco1 + torax;
-ao_maskp2_dia = imdilate(ao_maskp2_dia,element);
-ao_maskp2_dia = permute(ao_maskp2_dia, [2, 3, 1]);
-ao_maskp2_dia = permute(ao_maskp2_dia, [2, 3, 1]);
-mascara_p2_dia = imdilate(ao_maskp2_dia,element);
-mask_p2_dia = volume_cora .* mascara_p2_dia;
-aop2_dia = patient .*mask_p2_dia;
-aop2_dia_black = patient_black .* imdilate(mask_p2_dia,element);
+ao_maskp2_sys = arco1 + torax;
+ao_maskp2_sys = imdilate(ao_maskp2_sys,element);
+ao_maskp2_sys = permute(ao_maskp2_sys, [2, 3, 1]);
+ao_maskp2_sys = permute(ao_maskp2_sys, [2, 3, 1]);
+mascara_p2_sys = imdilate(ao_maskp2_sys,element);
+mask_p2_sys = volume_cora .* mascara_p2_sys;
+aop2_sys = patient .*mask_p2_sys;
+aop2_sys_black = patient_black .* imdilate(mask_p2_sys,element);
 %% Parametro de volumen 
-Volumenp2_dia = sum(mask_p2_dia,'all');
+Volumenp2_sys = sum(mask_p2_sys,'all');
 %%
-save('patient2_dia.mat','aop2_dia','aop2_dia_black','mask_p2_dia','Volumenp2_dia')
+save('patient2_sys.mat','aop2_sys','aop2_sys_black','mask_p2_sys','Volumenp2_sys')
