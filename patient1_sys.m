@@ -203,6 +203,6 @@ mask_p1_sys = volume_cora .* ao_maskp1_sys;
 aop1_sys = patient .*mask_p1_sys;
 aop1_sys_black = patient_black .* imdilate(mask_p1_sys,element);
 %% Parametro de volumen 
-Volumenp1_sys = sum(ao_maskp1_sys,'all');
+Volumenp1_sys = sum(mask_p1_sys,'all');
 %%
 save('patient1_sys.mat','aop1_sys','aop1_sys_black','mask_p1_sys','Volumenp1_sys')
