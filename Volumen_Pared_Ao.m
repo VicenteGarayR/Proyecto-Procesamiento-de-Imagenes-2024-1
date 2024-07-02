@@ -1,88 +1,53 @@
 clear;
 clc;
 close all;
+load project_data_v2.mat
 load patient1_dia.mat
 load patient1_sys.mat
 load patient2_dia.mat
 load patient2_sys.mat
+patient1_dia_brightblood = mat2gray(permute(patient1_dia_brightblood, [1, 3, 2]));
+patient1_sys_brightblood = mat2gray(permute(patient1_sys_blackblood, [1, 3, 2]));
+patient2_dia_brightblood = mat2gray(permute(patient2_dia_brightblood, [1, 3, 2]));
+patient2_sys_brightblood = mat2gray(permute(patient2_sys_brightblood, [1, 3, 2]));
 
-volshow(aop1_sys_black);
-Vol_Pared_Ao(aop1_sys_black);
+Vol_Pared_Ao(aop1_dia_black,patient1_dia_brightblood,mask_p1_dia);
+Vol_Pared_Ao(aop1_sys_black,patient1_sys_brightblood,mask_p1_sys);
+Vol_Pared_Ao(aop2_dia_black,patient2_dia_brightblood,mask_p2_dia);
+Vol_Pared_Ao(aop2_sys_black,patient2_sys_brightblood,mask_p2_sys);
 
+function totalVolume=Vol_Pared_Ao(Vol,M,P)
 
-function totalVolume=Vol_Pared_Ao(Vol)
+    Se=strel("cube",4);
     
-    element=strel('cube',1);
-    % Definir un elemento estructurante adecuado (por ejemplo, un disco pequeño)
-    se = strel('disk', 10);
-    
-    [counts , bin]=imhist(Vol);
-    
-    otsu=0.5*otsuthresh(counts);
-    N=imbinarize(Vol,otsu);
-    
-    distanceTransform = bwdist(~N);
-    filteredImage = medfilt3(distanceTransform);
+    gradientMagnitude=imdilate(P,Se)-P;
+    [count, bin]=imhist(gradientMagnitude);
+    otsu=otsuthresh(count);
+    K=imbinarize(gradientMagnitude,otsu);
 
-    N=imopen(N,element);
-    
-    % Aplicar el filtro de Sobel 3D para detectar bordes
-    sobelX = [-1 0 1; -2 0 2; -1 0 1]; % Filtro Sobel en dirección X
-    sobelY = sobelX'; % Filtro Sobel en dirección Y
-    sobelZ = cat(3, [-1 -2 -1; 0 0 0; 1 2 1]); % Filtro Sobel en dirección Z
-    
-    % Aplicar convolución con los filtros Sobel
-    gradX = convn(filteredImage, sobelX, 'same');
-    gradY = convn(filteredImage, sobelY, 'same');
-    gradZ = convn(filteredImage, sobelZ, 'same');
-    
-    % Calcular la magnitud del gradiente
-    magnitudeGrad = sqrt(gradX.^2 + gradY.^2 + gradZ.^2);
+    filteredImage=Vol;
+    [counts , bin]=imhist(filteredImage);
 
-    % Umbralizar para obtener bordes
-    edges3D=imbinarize(magnitudeGrad,0.4);
+    otsu=otsuthresh(counts);
 
-    % Definir el tamaño de voxel (por ejemplo, cada voxel es de 1x1x1 mm)
-    voxelSize = [1, 1, 1]; % en mm
-    
-    % Calcular el volumen del voxel
-    voxelVolume = prod(voxelSize); % volumen del voxel en mm^3  
-    
-    % Calcular el número de voxeles en la región de interés
-    numVoxels = sum(N(:));
-    
-    % Calcular el volumen total de la región de interés
-    totalVolume = numVoxels * voxelVolume;
+    N=imbinarize(filteredImage,otsu);
+    N=N&~P;
+    N=imclose(N,Se);
 
-%     volshow(N);
-%     volshow(distanceTransform);
-%     volshow(filteredImage);
-    volshow(edges3D);
-    
-    save('aop1_sys_black_Filtrado.mat','edges3D','filteredImage');
+    Vol_Final=N|K;
+    volshow(Vol_Final);
+
+    numVoxels = sum(Vol_Final,'all');
+    totalVolume = numVoxels * 0.0033750;
+    disp(totalVolume);
+ 
+%     % Crear un volumen RGB donde la máscara se superpone en rojo
+%     overlay = cat(4, M, M, M);  % Inicialmente, todos los canales son iguales
+%     overlay(:,:,:,2) = overlay(:,:,:,2) + 0.5 * Vol_Final;  % Añadir la máscara al canal rojo
+%     overlay(:,:,:,1) = overlay(:,:,:,1) + 0.5 * P;  % Añadir la máscara al canal rojo
+% 
+%     % Visualizar el volumen original con la máscara superpuesta
+%     volshow(overlay);
 
 end
-
-
-% Función para rellenar NaNs basada en la media de los vecinos
-% function matrix = inpaint_nans(matrix)
-%     [m, n] = size(matrix);
-%     [i, j] = find(isnan(matrix));
-%     for k = 1:length(i)
-%         neighbors = [];
-%         if i(k) > 1
-%             neighbors = [neighbors, matrix(i(k)-1, j(k))];
-%         end
-%         if i(k) < m
-%             neighbors = [neighbors, matrix(i(k)+1, j(k))];
-%         end
-%         if j(k) > 1
-%             neighbors = [neighbors, matrix(i(k), j(k)-1)];
-%         end
-%         if j(k) < n
-%             neighbors = [neighbors, matrix(i(k), j(k)+1)];
-%         end
-%         matrix(i(k), j(k)) = mean(neighbors(~isnan(neighbors)));
-%     end
-% end
 
